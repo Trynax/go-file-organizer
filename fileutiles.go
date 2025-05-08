@@ -8,19 +8,31 @@ import (
 	"strings"
 )
 
-type FileType string;
+type FileType string
 
 const (
-	TypeImage FileType = "Images"
-	TypeVideo FileType = "Videos"
-	TypeDocument FileType = "Documents"
+	TypeImage FileType = "Image"
+	TypeVideo FileType = "Video"
+	TypeDocument FileType = "Document"
 	TypeAudio FileType = "Audio"
-	TypeArchive FileType = "Archives"
+	TypeArchive FileType = "Archive"
 	TypeCode FileType = "Code"
-	TypeOther FileType = "Others"
+	TypeOther FileType = "Other"
 
 )
 
+type FolderType string
+
+const (
+	TypeImageFolder FolderType = "Images"
+	TypeVideoFolder FolderType = "Videos"
+	TypeDocumentFolder FolderType = "Documents"
+	TypeAudioFolder FolderType = "Audios"
+	TypeArchiveFolder FolderType = "Archives"
+	TypeCodeFolder FolderType = "Codes"
+	TypeOtherFolder FolderType = "Others"
+
+)
 
 func GetFileType(filename string) FileType{
 
@@ -41,4 +53,83 @@ func GetFileType(filename string) FileType{
 		default:
 			return TypeOther
 }
+}
+
+func GetCategoryFolder(fileType FileType) FolderType{
+	switch fileType{
+		case TypeImage:
+			return TypeImageFolder
+		case TypeVideo:
+			return TypeVideoFolder
+		case TypeDocument:
+			return TypeDocumentFolder
+		case TypeAudio:
+			return TypeAudioFolder
+		case TypeArchive:
+			return TypeArchiveFolder
+		case TypeCode:
+			return TypeCodeFolder
+		default:
+			return TypeOtherFolder
+	}
+}
+func CreateParentFolder(sourceFolder string) (string, error){
+
+	sourceInfo, err := os.Stat(sourceFolder)
+
+	if err != nil{
+		return "", fmt.Errorf("Error getting source folder info: %v", err)
+	}
+
+	if !sourceInfo.IsDir(){
+		return "", fmt.Errorf("%s is not a directory", sourceFolder)
+	}
+
+	sourceAbspath, err := filepath.Abs(sourceFolder)
+
+	if err!=nil{
+		return "", fmt.Errorf("Error getting absolute path of source folder: %v", err)
+
+	}
+
+	parrentDir := filepath.Dir(sourceAbspath)
+	organizedFolder := filepath.Join(parrentDir, "Organized-Files")
+
+
+	err = os.MkdirAll(organizedFolder, 0755)
+
+	if err != nil{
+		return "", fmt.Errorf("Error creating organized folder: %v", err)
+	}
+
+	fmt.Println("Organized folder created at:", organizedFolder)
+	return organizedFolder, nil
+
+} 
+
+
+func createCategoryFolder(organizedFolder string, category FolderType) (string, error){
+	categoryFolder := filepath.Join(organizedFolder, string(category))
+
+	err := os.MkdirAll(categoryFolder, 0755)
+	
+	if err != nil{
+		return "", fmt.Errorf("Error creating category folder: %v", err)
+	}
+
+	return categoryFolder, nil
+
+}
+
+
+func HasFiles(folderPath string) (bool, error){
+	files, err := os.ReadDir(folderPath)
+	if err != nil{
+		return false, err
+	}
+
+	if len(files) == 0 {
+		return false, nil
+	}
+	return true, nil
 }
