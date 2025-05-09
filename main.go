@@ -12,22 +12,36 @@ import(
 func main(){
 
 	sourcePath := flag.String("path", ".", "Path to organize files from")
-	recursive := flag.Bool("recursive", false, "Process subdirctories recursively")
-	dryRun := flag.Bool("dry-run", false, "show what would be done without making chances")
-
 	flag.Parse()
-
-
 	absPath, err := filepath.Abs(*sourcePath)
 	if err != nil{
 		fmt.Println("Error getting absolute path:", err)
 		os.Exit(1)
-
+	}
+	
+	// check if the folder has files
+	_, err = HasFiles(absPath)
+	if err != nil{
+		fmt.Println("Error checking for files:", err)
+		os.Exit(1)
 	}
 
+	organizedFolder,err :=CreateOrganizedFolder(absPath)
+	if err != nil{
+		fmt.Println("Error creating organized folder:", err)
+		os.Exit(1)
+	}
+
+	// create category folders
+
+
+	
+OragnizeFiles(absPath, organizedFolder)
+
+
+
 	fmt.Printf("Starting file organization in: %s\n", absPath)
-	fmt.Printf("Recursive mode: %v\n", *recursive)
-	fmt.Printf("Dry run mode: %v\n", *dryRun)
+
 
 
 	fmt.Println("File organization completed!")
@@ -37,3 +51,4 @@ func main(){
 
 
 }
+

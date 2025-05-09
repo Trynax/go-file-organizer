@@ -1,11 +1,11 @@
 package main
 
-
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"io"
 )
 
 type FileType string
@@ -73,7 +73,7 @@ func GetCategoryFolder(fileType FileType) FolderType{
 			return TypeOtherFolder
 	}
 }
-func CreateParentFolder(sourceFolder string) (string, error){
+func CreateOrganizedFolder(sourceFolder string) (string, error){
 
 	sourceInfo, err := os.Stat(sourceFolder)
 
@@ -108,7 +108,7 @@ func CreateParentFolder(sourceFolder string) (string, error){
 } 
 
 
-func createCategoryFolder(organizedFolder string, category FolderType) (string, error){
+func CreateCategoryFolder(organizedFolder string, category FolderType) (string, error){
 	categoryFolder := filepath.Join(organizedFolder, string(category))
 
 	err := os.MkdirAll(categoryFolder, 0755)
@@ -121,6 +121,41 @@ func createCategoryFolder(organizedFolder string, category FolderType) (string, 
 
 }
 
+func OragnizeFiles(sourceFolder string, organizeFolder string) error{
+	files, err := os.ReadDir(sourceFolder)
+	if err != nil{
+		return fmt.Errorf("Error reading source folder: %v", err)
+	}
+
+
+	moveCount:=0
+	for _,file := range files{
+		if file.IsDir(){
+			continue
+		}
+
+		sourceFilePath := filepath.Join(sourceFolder, file.Name())
+		fileType := GetFileType(file.Name())
+		categoryFolder := GetCategoryFolder(fileType)
+		categoryFolderPath := filepath.Join(organizeFolder, string(categoryFolder))
+		if !pathExist(categoryFolderPath){
+			err := os.MkdirAll(categoryFolderPath, 0755)
+			if err != nil{
+				return fmt.Errorf("Error creating category folder: %v", err)
+			}	
+			fmt.Println("Category folder created at:", categoryFolderPath)
+		}
+		destFilePath := filepath.Join(categoryFolderPath, file.Name())
+		copyFile(sourceFilePath, destFilePath)
+		moveCount++
+
+	
+	}
+
+	fmt.Printf("Moved %d files successfully.\n", moveCount)
+	return nil
+}
+
 
 func HasFiles(folderPath string) (bool, error){
 	files, err := os.ReadDir(folderPath)
@@ -128,8 +163,38 @@ func HasFiles(folderPath string) (bool, error){
 		return false, err
 	}
 
-	if len(files) == 0 {
-		return false, nil
+	return len(files)>0, nil
+}
+
+
+func pathExist (path string) bool{
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
+}
+
+func copyFile(src,dst string) error{
+	sourceFile, err := os.Open(src)
+	if err != nil{
+		return err
 	}
-	return true, nil
+	defer sourceFile.Close()
+
+	destFile, err := os.Create(dst)
+	if err != nil{
+		return err
+	}
+
+	defer destFile.Close()
+	_, err = io.Copy(destFile, sourceFile)
+	if err != nil{
+		return err
+	}
+
+	sourceInfo , err := os.Stat(src)
+	if err != nil{
+		return err
+	}
+	return os.Chmod(dst, sourceInfo.Mode())
+
+	
 }
