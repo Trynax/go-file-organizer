@@ -32,7 +32,7 @@ func main(){
 		os.Exit(1)
 	}
 
-	// create category folders
+	
 
 
 	
